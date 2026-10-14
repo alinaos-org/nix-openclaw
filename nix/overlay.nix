@@ -1,6 +1,8 @@
 {
   openclawToolPkgs ? { },
   qmdPkgs ? { },
+  # rev and narHash of the tools repository openclawToolPkgs come from.
+  openclawToolsSource ? null,
 }:
 final: prev:
 let
@@ -36,6 +38,7 @@ in
   "pnpm_12"
 ])
 // {
+  inherit openclawToolsSource;
   openclawPackages = packages // {
     inherit toolNames withTools;
   };

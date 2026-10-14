@@ -63,11 +63,20 @@ let
 
   bundledPluginSources =
     let
-      openclawToolsRev = "e1a2eb893d93f582f3e33589c5075171a5f2c3b2";
-      openclawToolsNarHash = "sha256-G2A3S2el2DtXNZl+a/aVkLt4oJof51fslCUeqCaF5z0=";
+      # The tools revision the overlay's packages come from (flake.nix), so a
+      # bundled plugin and the CLI bundle ship the same tool version. The pin is
+      # only for a package set without this flake's overlay.
+      openclawToolsSource =
+        if (pkgs.openclawToolsSource or null) != null then
+          pkgs.openclawToolsSource
+        else
+          {
+            rev = "e1a2eb893d93f582f3e33589c5075171a5f2c3b2";
+            narHash = "sha256-G2A3S2el2DtXNZl+a/aVkLt4oJof51fslCUeqCaF5z0=";
+          };
       openclawTools =
         tool:
-        "github:openclaw/nix-openclaw-tools?dir=tools/${tool}&rev=${openclawToolsRev}&narHash=${openclawToolsNarHash}";
+        "github:alinaos-org/nix-openclaw-tools?dir=tools/${tool}&rev=${openclawToolsSource.rev}&narHash=${openclawToolsSource.narHash}";
     in
     lib.mapAttrs (_name: plugin: plugin.source or (openclawTools plugin.tool)) pluginCatalog;
 

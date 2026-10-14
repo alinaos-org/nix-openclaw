@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nix-openclaw-tools.url = "github:openclaw/nix-openclaw-tools";
+    nix-openclaw-tools.url = "github:alinaos-org/nix-openclaw-tools";
     qmd.url = "github:tobi/qmd/v2.8.3";
     qmd.inputs.flake-utils.follows = "flake-utils";
     qmd.inputs.nixpkgs.follows = "nixpkgs";
@@ -35,6 +35,8 @@
         final: prev:
         import ./nix/overlay.nix {
           openclawToolPkgs = openclawToolPkgsFor prev.stdenv.hostPlatform.system;
+          # The same tools revision for the bundled plugins' sources (lib.nix).
+          openclawToolsSource = { inherit (nix-openclaw-tools) rev narHash; };
           qmdPkgs = qmdPkgsFor prev.stdenv.hostPlatform.system;
         } final prev;
       sourceInfoStable = import ./nix/sources/openclaw-source.nix;
