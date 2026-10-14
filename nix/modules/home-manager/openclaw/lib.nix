@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  openclawConfigOptionsFile ? null,
 }:
 
 let
@@ -23,7 +24,12 @@ let
       cfg.package;
   appPackage = if cfg.appPackage != null then cfg.appPackage else defaultPackage;
   qmdPackage = pkgs.openclawPackages.qmd or null;
-  generatedConfigOptions = import ../../../generated/openclaw-config-options.nix { lib = lib; };
+  generatedConfigOptions = import (
+    if openclawConfigOptionsFile != null then
+      openclawConfigOptionsFile
+    else
+      ../../../generated/openclaw-config-options.nix
+  ) { lib = lib; };
   agentOptions = generatedConfigOptions.agents.type.getSubOptions [ ];
   usesAgentEntries = agentOptions ? entries;
   hasAgentOwnership = agentOptions ? ownership;

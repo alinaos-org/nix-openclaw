@@ -2,11 +2,21 @@
   config,
   lib,
   pkgs,
+  # Typed config options generated for the OpenClaw release this module runs
+  # (nix/scripts/generate-config-options.ts); null keeps nix/generated's.
+  openclawConfigOptionsFile ? null,
   ...
 }:
 
 let
-  openclawLib = import ./lib.nix { inherit config lib pkgs; };
+  openclawLib = import ./lib.nix {
+    inherit
+      config
+      lib
+      pkgs
+      openclawConfigOptionsFile
+      ;
+  };
   pluginOptionType = lib.types.submodule {
     options = {
       source = lib.mkOption {
