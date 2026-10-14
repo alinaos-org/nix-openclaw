@@ -9,11 +9,35 @@
   cacert,
   openclawPackage ? null,
   linkOpenClawPeer ? openclawPackage != null,
+  # A directory holding this repository's nix/scripts, for a caller that wants
+  # its plugins to depend on those scripts only (openclaw-nix). null: the
+  # scripts beside this file, each referenced on its own.
+  scripts ? null,
+  # The package-lock files of the lock set the locks were generated with. null:
+  # nix/generated's; openclaw-nix passes its own per-release set.
+  packageLockDir ? null,
 }:
 
 lock:
 
 let
+  fetchSourceScript =
+    if scripts == null then
+      "${../scripts/openclaw-runtime-plugin-fetch-source.mjs}"
+    else
+      "${scripts}/openclaw-runtime-plugin-fetch-source.mjs";
+  prepareNpmScript =
+    if scripts == null then
+      "${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}"
+    else
+      "${scripts}/openclaw-runtime-plugin-prepare-npm.mjs";
+  installScript =
+    if scripts == null then
+      "${../scripts/runtime-plugin}/install.mjs"
+    else
+      "${scripts}/runtime-plugin/install.mjs";
+  packageLockFiles =
+    if packageLockDir == null then "${../generated/openclaw-runtime-plugins}" else "${packageLockDir}";
   runtimeEntries =
     (lock.runtimeExtensions or [ ])
     ++ lib.optional ((lock.runtimeSetupEntry or null) != null) lock.runtimeSetupEntry;
@@ -55,7 +79,7 @@ let
         outputHashAlgo = "sha256";
         outputHash = sourceHash;
         installPhase = ''
-          ${nodejs_24}/bin/node ${../scripts/openclaw-runtime-plugin-fetch-source.mjs} \
+          ${nodejs_24}/bin/node ${fetchSourceScript} \
             ${lib.escapeShellArg lock.sourceSpec} "$out"
         '';
       }
@@ -68,7 +92,7 @@ let
     "package-lock"
   ];
   packageLockEnv = lib.optionalAttrs (dependencyMode == "package-lock") {
-    OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = "${../generated/openclaw-runtime-plugins}/${lock.npmPackageLockFile}";
+    OPENCLAW_RUNTIME_PLUGIN_PACKAGE_LOCK_FILE = "${packageLockFiles}/${lock.npmPackageLockFile}";
   };
   hasRuntimeDependencies =
     (lock.dependencies or { }) != { } || (lock.optionalDependencies or { }) != { };
@@ -106,7 +130,7 @@ let
       dontBuild = true;
 
       postPatch = lib.optionalString isLocked ''
-        ${nodejs_24}/bin/node ${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}
+        ${nodejs_24}/bin/node ${prepareNpmScript}
       '';
 
       env = {
@@ -134,7 +158,7 @@ let
         OPENCLAW_RUNTIME_PLUGIN_PEER_OPENCLAW = lock.peerOpenClaw;
       };
 
-      installPhase = "${nodejs_24}/bin/node ${../scripts/runtime-plugin}/install.mjs";
+      installPhase = "${nodejs_24}/bin/node ${installScript}";
 
       passthru.openclawRuntimePlugin = {
         inherit (lock) id;
@@ -170,7 +194,7 @@ let
           OPENCLAW_RUNTIME_PLUGIN_PACKAGE_NAME = lock.packageName or "";
           OPENCLAW_RUNTIME_PLUGIN_VERSION = lock.version or "";
           postPatch = ''
-            ${nodejs_24}/bin/node ${../scripts/openclaw-runtime-plugin-prepare-npm.mjs}
+            ${nodejs_24}/bin/node ${prepareNpmScript}
           '';
         }
         // packageLockEnv
