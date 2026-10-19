@@ -27,8 +27,10 @@ if ! "$qmd_bin" --version >/dev/null; then
   exit 1
 fi
 
-if ! grep -q "OPENCLAW_PINNED_WRITE_PYTHON" "$openclaw_bin"; then
-  echo "openclaw wrapper does not pin a Nix Python for safe writes" >&2
+# OpenClaw's safe writes are native: every release from 2026.10.1 ignores the
+# retired Python helper variables and warns about each one set (FS_SAFE_PYTHON_DEPRECATED).
+if grep -Eq "OPENCLAW_PINNED_(WRITE_)?PYTHON|FS_SAFE_PYTHON" "$openclaw_bin"; then
+  echo "openclaw wrapper sets a retired fs-safe Python variable" >&2
   exit 1
 fi
 

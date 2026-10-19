@@ -9,14 +9,6 @@ if [ ! -x "$OPENCLAW_GATEWAY_BIN" ]; then
   echo "OPENCLAW_GATEWAY_BIN is not executable: $OPENCLAW_GATEWAY_BIN" >&2
   exit 1
 fi
-if [ -z "${OPENCLAW_PINNED_WRITE_PYTHON:-}" ]; then
-  echo "OPENCLAW_PINNED_WRITE_PYTHON is not set" >&2
-  exit 1
-fi
-if [ ! -x "$OPENCLAW_PINNED_WRITE_PYTHON" ]; then
-  echo "OPENCLAW_PINNED_WRITE_PYTHON is not executable: $OPENCLAW_PINNED_WRITE_PYTHON" >&2
-  exit 1
-fi
 if [ -z "${STDENV_SETUP:-}" ]; then
   echo "STDENV_SETUP is not set" >&2
   exit 1
@@ -29,9 +21,9 @@ fi
 mkdir -p "$out/bin"
 
 if [ -n "${OPENCLAW_TOOLS_PATH:-}" ]; then
-  bash -e -c '. "$STDENV_SETUP"; makeWrapper "$OPENCLAW_GATEWAY_BIN" "$out/bin/openclaw" --set OPENCLAW_PINNED_WRITE_PYTHON "$OPENCLAW_PINNED_WRITE_PYTHON" --set-default OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY "1" --prefix PATH : "$OPENCLAW_TOOLS_PATH"'
+  bash -e -c '. "$STDENV_SETUP"; makeWrapper "$OPENCLAW_GATEWAY_BIN" "$out/bin/openclaw" --set-default OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY "1" --prefix PATH : "$OPENCLAW_TOOLS_PATH"'
 else
-  bash -e -c '. "$STDENV_SETUP"; makeWrapper "$OPENCLAW_GATEWAY_BIN" "$out/bin/openclaw" --set OPENCLAW_PINNED_WRITE_PYTHON "$OPENCLAW_PINNED_WRITE_PYTHON" --set-default OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY "1"'
+  bash -e -c '. "$STDENV_SETUP"; makeWrapper "$OPENCLAW_GATEWAY_BIN" "$out/bin/openclaw" --set-default OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY "1"'
 fi
 
 if [ -n "${OPENCLAW_APP_PACKAGE:-}" ]; then
