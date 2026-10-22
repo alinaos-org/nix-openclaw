@@ -1014,42 +1014,19 @@ Pins live in:
 - `nix/sources/openclaw-source.nix`
 - `nix/packages/openclaw-app.nix`
 
-### Responsibilities (who owns what)
+### In this fork
+
+alinaos-org/nix-openclaw is consumed by openclaw-nix through its `openclaw-nix`
+branch, and it pins and publishes nothing itself: there are no workflows, release
+tags or pin automation here. openclaw-nix pins each OpenClaw release, generates
+its typed config options and runtime-plugin locks with this repository's
+generators, and runs this repository's module, lock and script checks against
+them in its own CI (`lib.mkChecks`, `maintainers/gates.md`). The pins and
+`nix/generated` here stay at the last release this repository pinned.
 
 - **openclaw (upstream)**: source code, tests, releases.
-- **nix-openclaw**: Nix packaging, pins, CI builds.
-- **release automation**: update cadence, smoke tests, promotion, rollout/rollback.
-
-### Automated pipeline
-
-1) Hourly **Pin Stable OpenClaw Version** polls upstream stable OpenClaw releases.
-2) It selects the newest stable source release and newest stable public macOS app zip independently.
-3) Newer source releases that lack public macOS app assets are reported as app lag, not skipped.
-4) The stable pin workflow materializes the source pin from the newest source tag ref, updates the app asset pin from the newest public app zip, and regenerates config options from the selected source.
-5) The stable pin workflow validates that source/app pin set on the same Linux + macOS contract as repository `CI`.
-6) Only after both validations pass does the workflow push one release-mirroring commit to `main`.
-
-### Mirrored tags
-
-When a complete package state is proven on `main`, `nix-openclaw` publishes a
-matching `v<OpenClaw version>` tag and lightweight GitHub Release. The tag points
-at the validated `nix-openclaw` commit, so users can install the same upstream
-OpenClaw version through Nix:
-
-```bash
-nix run github:openclaw/nix-openclaw/v2026.5.28#openclaw
-```
-
-Each generated GitHub Release links back to the matching upstream OpenClaw
-release so users can click through from the Nix package state to the source
-release notes and artifacts.
-
-Mirrored tags are only created when the source pin and macOS app pin both match
-the same upstream stable OpenClaw version and repository `CI` is green on Linux
-and macOS for that exact commit. If a source release is packageable but the
-matching public macOS app zip is missing, `main` may still carry the packaging
-work, but no mirrored `v<OpenClaw version>` tag is published until the full
-user-facing package state is complete.
+- **openclaw-nix**: the release pins, per-release options and plugin locks, CI and the binary cache.
+- **nix-openclaw (this repository)**: the Home Manager module, the CLI tool bundle, the runtime-plugin builder, the gateway recipe and the generators.
 
 ---
 

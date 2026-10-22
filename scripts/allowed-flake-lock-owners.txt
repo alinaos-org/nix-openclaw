@@ -1,7 +1,0 @@
-# Allowed GitHub inputs in flake.lock (owner/repo)
-NixOS/nixpkgs
-alinaos-org/nix-openclaw-tools
-nix-community/home-manager
-nix-systems/default
-numtide/flake-utils
-tobi/qmd

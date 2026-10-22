@@ -1,38 +1,40 @@
 # Gates
 
-Use targeted checks while debugging, then run the full relevant gate before handoff.
+This repository has no CI of its own. openclaw-nix consumes its `openclaw-nix`
+branch, and openclaw-nix's CI runs these checks against every release it builds:
+`lib.mkChecks` (`nix/checks/release-checks.nix`) with openclaw-nix's package set,
+the release's typed config options and its runtime-plugin lock set
+(`checks.<system>.nix-openclaw-*` there). Verify a change here the same way before
+it lands: from an openclaw-nix checkout, build those checks with
+`--override-input nix-openclaw path:<this worktree>`.
 
-## Required Checks
+## The release checks
 
-- `scripts/check-flake-lock-owners.sh`
-- `nix fmt -- --ci`
-- JavaScript contracts on the pinned Node 24 runtime: `node --test scripts/*.test.mjs maintainers/scripts/*.test.mjs nix/scripts/*.test.mjs nix/scripts/*.test.js`
-- Private pnpm runtime check (`checks.<system>.pnpm-runtime`, included in `package-artifacts`): offline local-tarball install, package execution, and frozen-lockfile rejection for both supported private pnpm majors
-- updater shell syntax
-- workflow YAML parse
-- `nix flake show --accept-flake-config`
-- Linux supported surface:
-  `checks.x86_64-linux.package-artifacts`, `module-render` including
-  `source-override-render`, `runtime-smoke`, `platform-activation`,
-  `runtime-plugin-packages`, `runtime-plugin-host`, and `qmd-opt-in`
-- Darwin supported surface when available:
-  `checks.aarch64-darwin.package-artifacts`, `module-render` including
-  `source-override-render`, `runtime-smoke`, `platform-activation`,
-  `runtime-plugin-packages`, `runtime-plugin-host`, and `qmd-opt-in`
-- `scripts/hm-activation-macos.sh` when a macOS runner is available
+- `default-instance`, `plugin-instance`, `source-override-render`: evaluation-time
+  assertions over the Home Manager module (`nix/checks/default-instance`).
+- `runtime-environment`, `workspace-materializer`: the module's gateway
+  environment wrapper and workspace materializer.
+- `runtime-plugin-locks`: `nix/scripts/check-openclaw-runtime-plugin-locks.mjs`
+  over a lock set and the OpenClaw source it was generated from, plus the plugin
+  ids a consumer requires to stay supported.
+- `script-tests`: every `node --test` file in `nix/scripts`, on the pinned Node 24,
+  Git, jq and semver CLI.
 
-Run contract tests inside `nix develop` to select the pinned Node, Bash, and Git.
-CI selects those same packages with `nix shell` on both Linux and macOS.
+This flake's own `checks.<system>` run the same set on `nix/generated` (the last
+release this repository pinned), beside the package, gateway, QMD and activation
+checks, which build OpenClaw.
 
-The provenance job also gates maintainer and same-repository authorization; the
-platform jobs depend on it. Linux and macOS 15 retain all supported-surface
-checks. The historical installed-baseline qualification still verifies Node 22
-from its pinned historical package; current packaging contracts use Node 24.
+## Runtime plugin lock checks
 
-## CI Verification
+`nix develop --command node nix/scripts/update-openclaw-runtime-plugin-locks.mjs --check`
+compares regenerated artifacts without creating or changing the generated directory.
+Use no argument to write updates. Unknown or repeated flags fail before Nix
+runs; `--help` prints usage without fetching artifacts.
 
-After pushing maintainer fixes, verify the GitHub Actions run for the pushed commit.
-
-Never say you will keep polling unless a blocking poll is already running. If reporting a poll, name the active run or local polling session.
-
-If CI fails, inspect the failing run, classify the failure, fix what belongs to `nix-openclaw`, and rerun until green or until the exact external blocker is proven.
+Plugin compatibility checks use the pinned `node-semver` tool from `nix develop`
+(the `runtime-plugin-locks` and `script-tests` checks supply it too). Peer ranges
+use npm syntax, including wildcards, caret, tilde and OR ranges. Plugin API ranges
+follow upstream OpenClaw: comparator intersections only, bare major.minor as a
+minimum, and release-suffix normalization. Minimum host versions retain numeric
+correction ordering after stable releases; legacy bare minimums remain accepted.
+Missing tooling aborts generation before processing artifacts.

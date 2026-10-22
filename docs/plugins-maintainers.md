@@ -52,10 +52,11 @@ lock. The generated record includes `npmDepsHash`, `npmPackageLockFile`,
 source, source SHA, generation time). Only build copies are normalized.
 Entries must declare an empty `omittedWorkspaceDependencies` array; partial locks are skipped as `package-lock-evidence-incomplete`, with the omitted dependency names in `report.json`.
 
-Verification has two tiers. Pin-time validation in `scripts/update-pins.sh`
-sets `OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET=1`: for every package-lock
-record labeled `release`, the checker prefetches the pinned release evidence
-asset, checks its Nix hash, and compares the exact selected lock bytes and
+Verification has two tiers. Pin-time validation sets
+`OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET=1` for the lock checker
+(`nix/scripts/check-openclaw-runtime-plugin-locks.mjs`, with network): for every
+package-lock record labeled `release`, the checker prefetches the pinned release
+evidence asset, checks its Nix hash, and compares the exact selected lock bytes and
 SHA-256 with the committed sidecar. Missing assets, missing entries, and
 mismatches fail validation. This verification ignores the local ZIP override
 for release records. Pure Nix CI keeps the existing structural and hash checks
@@ -69,7 +70,7 @@ shape. No registry range resolution happens during activation or builds.
 
 For maintainer validation before the release asset exists, set
 `OPENCLAW_RUNTIME_PLUGIN_DEPENDENCY_EVIDENCE_ZIP=/absolute/path/evidence.zip`
-when running `scripts/update-pins.sh apply` or the runtime lock updater directly.
+when running the runtime lock updater.
 The ZIP must still match `openclaw-source.nix`'s `releaseTag` and `rev`; its asset
 name uses `releaseVersion`, while package selection uses the artifact version
 (which may be `runtimePluginVersion` on correction releases). Override records
