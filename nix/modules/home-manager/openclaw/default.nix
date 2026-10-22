@@ -21,7 +21,8 @@
   ];
   # The typed config options file for the OpenClaw release a host runs, as a
   # module argument because the option declarations themselves need it (an
-  # option would recurse). Hosts that build another release set it to that
-  # release's generate-config-options.ts output; null keeps nix/generated's.
+  # option would recurse): that release's generate-config-options.ts output.
+  # openclaw-nix provides one per release. Left null, evaluation stops and says
+  # so; nix/generated's options are not a fallback.
   config._module.args.openclawConfigOptionsFile = lib.mkDefault null;
 }

@@ -24,12 +24,14 @@ let
       cfg.package;
   appPackage = if cfg.appPackage != null then cfg.appPackage else defaultPackage;
   qmdPackage = pkgs.openclawPackages.qmd or null;
-  generatedConfigOptions = import (
+  # The release's typed options, never a default: nix/generated's are for the
+  # release this repository last pinned, so a host on another one would get
+  # its config typed against the wrong schema without a word.
+  generatedConfigOptions =
     if openclawConfigOptionsFile != null then
-      openclawConfigOptionsFile
+      import openclawConfigOptionsFile { lib = lib; }
     else
-      ../../../generated/openclaw-config-options.nix
-  ) { lib = lib; };
+      throw "programs.openclaw: set _module.args.openclawConfigOptionsFile to the typed config options of the OpenClaw release you run; openclaw-nix provides one per release (its homeManagerModules.openclaw sets it, or lib.configOptionsFile).";
   agentOptions = generatedConfigOptions.agents.type.getSubOptions [ ];
   usesAgentEntries = agentOptions ? entries;
   hasAgentOwnership = agentOptions ? ownership;

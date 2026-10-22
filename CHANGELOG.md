@@ -6,6 +6,8 @@ Older repository history is available in git.
 
 ## Unreleased
 
+- Breaking (2026-10-22): the Home Manager module needs `_module.args.openclawConfigOptionsFile`, the typed config options of the OpenClaw release it runs. Left unset, evaluation fails and says so; it used to fall back silently to `nix/generated`'s options, which are for 2026.9.5. openclaw-nix provides the file for each release (`lib.configOptionsFile`), and its `homeManagerModules.openclaw` is this module with the file set.
+
 - Refresh Nixpkgs, Home Manager, bundled OpenClaw tools and example-plugin inputs, and update the private pnpm 11 runtime to 11.27.0.
 - Refresh Nix inputs and the example plugin lock, and update private source-build pnpm runtimes to 11.27.1 and 12.6.0.
 - Prevent newly published backports from downgrading the selected gateway or macOS app; order stable releases and numeric corrections by version.

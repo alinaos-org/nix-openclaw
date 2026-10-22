@@ -3,7 +3,7 @@
   lib,
   pkgs,
   # Typed config options generated for the OpenClaw release this module runs
-  # (nix/scripts/generate-config-options.ts); null keeps nix/generated's.
+  # (nix/scripts/generate-config-options.ts); required (lib.nix).
   openclawConfigOptionsFile ? null,
   ...
 }:
