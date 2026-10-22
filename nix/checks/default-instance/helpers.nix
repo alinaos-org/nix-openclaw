@@ -1,4 +1,11 @@
-{ lib, pkgs }:
+{
+  lib,
+  pkgs,
+  # The typed config options the module is evaluated with: this repository's
+  # generated ones, or a consumer's for the release it runs (openclaw-nix's
+  # pins/openclaw-config-options.nix, through lib.mkChecks).
+  openclawConfigOptionsFile ? ../../generated/openclaw-config-options.nix,
+}:
 
 let
   testLib = lib.extend (
@@ -89,6 +96,7 @@ let
       modules = [
         stubModule
         ../../modules/home-manager/openclaw.nix
+        { _module.args.openclawConfigOptionsFile = openclawConfigOptionsFile; }
         (
           { lib, ... }:
           {
@@ -146,7 +154,7 @@ let
 
   defaultEval = moduleEval { };
   openclawLib = import ../../modules/home-manager/openclaw/lib.nix {
-    inherit lib pkgs;
+    inherit lib pkgs openclawConfigOptionsFile;
     config = defaultEval.config;
   };
   inherit (openclawLib) usesAgentEntries;

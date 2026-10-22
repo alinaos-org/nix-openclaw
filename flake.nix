@@ -89,6 +89,8 @@
 
         checks =
           let
+            # The module, lock and script checks, on nix/generated's data (lib.mkChecks).
+            releaseChecks = self.lib.mkChecks { inherit pkgs; };
             stableChecks = {
               gateway = packageSetStable.openclaw-gateway;
               overlay = pkgs.callPackage ./nix/checks/openclaw-overlay.nix {
@@ -100,9 +102,13 @@
               package-contents = pkgs.callPackage ./nix/checks/openclaw-package-contents.nix {
                 openclawGateway = packageSetStable.openclaw-gateway;
               };
-              default-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
-                includeQmdChecks = false;
-              };
+              inherit (releaseChecks)
+                default-instance
+                source-override-render
+                workspace-materializer
+                runtime-environment
+                script-tests
+                ;
               source-patches = pkgs.callPackage ./nix/checks/openclaw-source-patches.nix {
                 openclawSource =
                   (pkgs.callPackage ./nix/packages/openclaw-gateway-source.nix {
@@ -110,11 +116,6 @@
                     inherit (packageSetStable) pnpm_11 pnpm_12;
                   }).src;
               };
-              source-override-render = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
-                includeSourceOverrideChecks = true;
-              };
-              workspace-materializer = pkgs.callPackage ./nix/checks/openclaw-workspace-materializer.nix { };
-              runtime-environment = pkgs.callPackage ./nix/checks/openclaw-runtime-environment.nix { };
               pnpm-runtime = pkgs.callPackage ./nix/checks/openclaw-pnpm-runtime.nix {
                 inherit (packageSetStable) pnpm_11 pnpm_12;
               };
@@ -137,9 +138,7 @@
               };
             };
             pluginChecks = {
-              plugin-instance = pkgs.callPackage ./nix/checks/openclaw-default-instance.nix {
-                includePluginChecks = true;
-              };
+              inherit (releaseChecks) plugin-instance;
             };
             runtimePluginChecks = {
               runtime-plugin-config-validity = pkgs.callPackage ./nix/checks/openclaw-config-validity.nix {
@@ -153,7 +152,7 @@
               example-plugin = pkgs.callPackage ./nix/checks/example-plugin.nix {
                 inherit nixpkgs flake-utils;
               };
-              runtime-plugin-locks = pkgs.callPackage ./nix/checks/openclaw-runtime-plugin-locks.nix { };
+              inherit (releaseChecks) runtime-plugin-locks;
               runtime-plugin-packages = pkgs.symlinkJoin {
                 name = "openclaw-runtime-plugin-packages";
                 paths = builtins.attrValues packageSetStable.openclawRuntimePlugins;
@@ -170,6 +169,7 @@
                   inherit pkgs;
                   modules = [
                     self.homeManagerModules.openclaw
+                    { _module.args.openclawConfigOptionsFile = ./nix/generated/openclaw-config-options.nix; }
                     ./nix/tests/hm-activation-macos/home.nix
                   ];
                 }).activationPackage;
@@ -260,6 +260,19 @@
       }
     )
     // {
+      # The module, lock and script checks (nix/checks/release-checks.nix) for a
+      # package set and the release data it builds with. This flake's checks
+      # call it with nix/generated's; openclaw-nix with its pins for each
+      # release:
+      #
+      #   nix-openclaw.lib.mkChecks {
+      #     inherit pkgs; # with this flake's overlay and the release's packages
+      #     openclawConfigOptionsFile = ./pins/openclaw-config-options.nix;
+      #     runtimePluginLockDir = ./pins/runtime-plugin-locks;
+      #     openclawSourceInfo = { releaseTag, releaseVersion, runtimePluginVersion, rev, hash };
+      #     requiredRuntimePluginIds = [ "kimi" ];
+      #   }
+      lib.mkChecks = import ./nix/checks/release-checks.nix;
       overlays.default = overlay;
       templates.agent-first = {
         path = ./templates/agent-first;

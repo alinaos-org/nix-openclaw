@@ -2,9 +2,11 @@
   lib,
   pkgs,
   nodejs_24,
+  # The typed config options to check the module with (default-instance/helpers.nix).
+  openclawConfigOptionsFile ? ../generated/openclaw-config-options.nix,
 }:
 let
-  helpers = import ./default-instance/helpers.nix { inherit lib pkgs; };
+  helpers = import ./default-instance/helpers.nix { inherit lib pkgs openclawConfigOptionsFile; };
   fixtures = ../tests/runtime-environment;
   environment = import ../modules/home-manager/openclaw/environment.nix { inherit lib pkgs; };
   guardFor =

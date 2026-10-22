@@ -1,4 +1,8 @@
-{ pkgs, home-manager }:
+{
+  pkgs,
+  home-manager,
+  openclawConfigOptionsFile ? ../generated/openclaw-config-options.nix,
+}:
 
 let
   openclawModule = ../modules/home-manager/openclaw.nix;
@@ -28,11 +32,17 @@ pkgs.testers.nixosTest {
           { config, lib, ... }:
           let
             openclawLib = import ../modules/home-manager/openclaw/lib.nix {
-              inherit config lib pkgs;
+              inherit
+                config
+                lib
+                pkgs
+                openclawConfigOptionsFile
+                ;
             };
           in
           {
             imports = [ openclawModule ];
+            _module.args.openclawConfigOptionsFile = openclawConfigOptionsFile;
 
             home = {
               username = "alice";

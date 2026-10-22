@@ -5,6 +5,7 @@
   nodejs_24,
   openclawGateway,
   includeRuntimePluginSmoke ? false,
+  openclawConfigOptionsFile ? ../generated/openclaw-config-options.nix,
 }:
 
 let
@@ -79,6 +80,7 @@ let
     modules = [
       stubModule
       ../modules/home-manager/openclaw.nix
+      { _module.args.openclawConfigOptionsFile = openclawConfigOptionsFile; }
       (
         { lib, ... }:
         {
@@ -114,7 +116,7 @@ let
 
   configPathKey = ".openclaw/openclaw.json";
   openclawLib = import ../modules/home-manager/openclaw/lib.nix {
-    inherit lib pkgs;
+    inherit lib pkgs openclawConfigOptionsFile;
     config = moduleEval.config;
   };
   renderedConfig = builtins.fromJSON moduleEval.config.home.file."${configPathKey}".text;

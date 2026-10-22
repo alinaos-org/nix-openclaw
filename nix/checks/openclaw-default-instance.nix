@@ -6,10 +6,12 @@
   includePluginChecks ? false,
   includeQmdChecks ? false,
   includeSourceOverrideChecks ? false,
+  # The typed config options to check the module with (default-instance/helpers.nix).
+  openclawConfigOptionsFile ? ../generated/openclaw-config-options.nix,
 }:
 
 let
-  helpers = import ./default-instance/helpers.nix { inherit lib pkgs; };
+  helpers = import ./default-instance/helpers.nix { inherit lib pkgs openclawConfigOptionsFile; };
   agents = import ./default-instance/agents.nix { inherit lib pkgs helpers; };
   services = import ./default-instance/services.nix { inherit lib pkgs helpers; };
   source = import ./default-instance/source.nix { inherit lib pkgs helpers; };

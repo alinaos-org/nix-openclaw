@@ -2,12 +2,18 @@
   config,
   lib,
   pkgs,
+  openclawConfigOptionsFile,
   ...
 }:
 
 let
   openclawLib = import ../../modules/home-manager/openclaw/lib.nix {
-    inherit config lib pkgs;
+    inherit
+      config
+      lib
+      pkgs
+      openclawConfigOptionsFile
+      ;
   };
 in
 {
