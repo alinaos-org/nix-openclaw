@@ -16,6 +16,8 @@
   openclawSourceInfo ? null,
   # Plugin ids the lock set must keep supporting, beyond the checker's own.
   requiredRuntimePluginIds ? [ ],
+  # SRI SHA-256 hashes of local evidence zips accepted for this lock set.
+  allowedEvidenceOverrideHashes ? [ ],
 }:
 
 let
@@ -32,6 +34,7 @@ in
   };
   workspace-materializer = pkgs.callPackage ./openclaw-workspace-materializer.nix { };
   runtime-plugin-locks = pkgs.callPackage ./openclaw-runtime-plugin-locks.nix {
+    inherit allowedEvidenceOverrideHashes;
     lockDir = runtimePluginLockDir;
     sourceInfo = openclawSourceInfo;
     requiredIds = requiredRuntimePluginIds;

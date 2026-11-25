@@ -13,6 +13,7 @@
   # (slack, discord, brave, diagnostics-prometheus and acpx): the ones a
   # consumer's hosts load.
   requiredIds ? [ ],
+  allowedEvidenceOverrideHashes ? [ ],
 }:
 
 let
@@ -67,7 +68,7 @@ stdenvNoCC.mkDerivation {
     OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR = "${lockDir}";
     OPENCLAW_RUNTIME_PLUGIN_LOCKS_JSON = "${locksJson}";
     OPENCLAW_SOURCE_INFO_PATH = "${sourceInfoFile}";
-    # Pure CI evaluation cannot opt into local release-evidence overrides.
+    OPENCLAW_RUNTIME_PLUGIN_ALLOWED_OVERRIDE_HASHES = lib.concatStringsSep " " allowedEvidenceOverrideHashes;
     OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE = builtins.getEnv "OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE";
     OPENCLAW_REQUIRED_RUNTIME_PLUGINS_MISSING = lib.concatStringsSep "; " missingRequired;
   };

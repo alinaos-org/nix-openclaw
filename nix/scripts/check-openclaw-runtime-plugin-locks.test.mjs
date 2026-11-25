@@ -48,13 +48,14 @@ function fixture(t) {
   });
   return {
     directory, locks,
-    run: (allow = "") => {
+    run: (allow = "", allowedHashes = []) => {
       const locksPath = path.join(directory, "locks.json");
       writeJson(locksPath, locks);
       return spawnSync(process.execPath, [script], { encoding: "utf8", env: {
         ...process.env, OPENCLAW_RUNTIME_PLUGIN_LOCK_DIR: directory,
         OPENCLAW_RUNTIME_PLUGIN_LOCKS_JSON: locksPath, OPENCLAW_SOURCE_INFO_PATH: sourceInfoPath,
         OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE: allow,
+        OPENCLAW_RUNTIME_PLUGIN_ALLOWED_OVERRIDE_HASHES: allowedHashes.join(" "),
         OPENCLAW_RUNTIME_PLUGIN_VERIFY_EVIDENCE_ASSET: "",
       } });
     },
@@ -166,6 +167,23 @@ test("checker accepts release evidence and gates override evidence explicitly", 
   assert.equal(result.status, 0, result.stderr);
   locks.acpx.npmPackageLockEvidence.source = "unknown";
   assert.notEqual(run("1").status, 0);
+});
+
+test("checker accepts override evidence only for a listed asset hash without the maintainer flag", (t) => {
+  const { locks, run } = fixture(t);
+  const evidence = locks.acpx.npmPackageLockEvidence;
+  const otherHash = `sha256-${Buffer.alloc(32, 1).toString("base64")}`;
+  evidence.source = "override";
+  const unlisted = run("", [otherHash]);
+  assert.notEqual(unlisted.status, 0);
+  assert.match(unlisted.stderr, /allowedEvidenceOverrideHashes/);
+  const listed = run("", [otherHash, evidence.assetNixHash]);
+  assert.equal(listed.status, 0, listed.stderr);
+  evidence.source = "unknown";
+  assert.notEqual(run("", [evidence.assetNixHash]).status, 0);
+  evidence.source = "override";
+  evidence.assetNixHash = "invalid";
+  assert.notEqual(run("", [evidence.assetNixHash]).status, 0);
 });
 
 for (const [label, mutate, pattern] of [

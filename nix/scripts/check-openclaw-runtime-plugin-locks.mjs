@@ -94,6 +94,7 @@ function lockSourceIsValid(lock) {
 const report = readJson(path.join(generatedDir, "report.json"));
 const sourceInfo = readNixStringFields(sourceInfoPath);
 const locks = readJson(locksJsonPath);
+const allowedEvidenceOverrideHashes = new Set(process.env.OPENCLAW_RUNTIME_PLUGIN_ALLOWED_OVERRIDE_HASHES?.match(/\S+/g));
 const supported = report.supported ?? [];
 const skipped = report.skipped ?? [];
 const supportedIds = supported.map((row) => row.id).sort();
@@ -169,9 +170,11 @@ for (const row of supported) {
       `https://github.com/openclaw/openclaw/releases/download/${sourceInfo.releaseTag}/`,
     ), `lock ${row.id} has invalid package-lock evidence assetUrl`);
     assert(evidence?.sourceSha === sourceInfo.rev, `lock ${row.id} package-lock evidence sourceSha mismatch`);
+    const hashAllowed = allowedEvidenceOverrideHashes.has(evidence.assetNixHash)
+      && /^sha256-[A-Za-z0-9+/]{43}=$/.test(evidence.assetNixHash);
     assert(evidence?.source === "release" || (evidence?.source === "override"
-      && process.env.OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE === "1"),
-    `lock ${row.id} package-lock evidence source must be release (maintainer override requires OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE=1)`);
+      && (hashAllowed || process.env.OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE === "1")),
+    `lock ${row.id} package-lock evidence source must be release (override requires assetNixHash in allowedEvidenceOverrideHashes or OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE=1)`);
   }
   assert(satisfiesMinHostVersion(report.openclawVersion, lock.minHostVersion), `lock ${row.id} minHostVersion excludes OpenClaw ${report.openclawVersion}`);
   assert(satisfiesPluginApiRange(report.openclawVersion, lock.openclawCompat), `lock ${row.id} openclawCompat excludes OpenClaw ${report.openclawVersion}`);

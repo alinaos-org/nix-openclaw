@@ -73,11 +73,13 @@ For maintainer validation before the release asset exists, set
 when running the runtime lock updater.
 The ZIP must still match `openclaw-source.nix`'s `releaseTag` and `rev`; its asset
 name uses `releaseVersion`, while package selection uses the artifact version
-(which may be `runtimePluginVersion` on correction releases). Override records
-require `OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE=1` for the lock checker.
-Pass that environment variable with `nix build --impure` for local Nix checks;
-pure CI rejects override records. Regenerate from the published release asset
-before landing generated locks. The updater's `--check` compares sidecar bytes
+(which may be `runtimePluginVersion` on correction releases). For local checks,
+maintainers can set `OPENCLAW_RUNTIME_PLUGIN_ALLOW_EVIDENCE_OVERRIDE=1` with
+`nix build --impure`. For a release without a published asset, consumers can
+pass the committed zip's SRI SHA-256 in `allowedEvidenceOverrideHashes` to
+`lib.mkChecks`. Pure CI accepts an override only if its recorded asset hash
+matches a listed hash. The list defaults to empty.
+The updater's `--check` compares sidecar bytes
 and detects missing or stale sidecars without modifying generated files.
 
 ## Interface Contract
