@@ -52,22 +52,31 @@ export function createLockBuilder({
         // @openclaw/codex bundles acorn alone) installs from upstream's package-lock
         // evidence when it covers the package: the build drops the bundled copies and the
         // evidence lock installs every declared dependency, bundled ones included.
+        // Evidence that marks the package bundled (memory-lancedb in 2026.11.10) is not
+        // a lock for it: such a package stays skipped as before.
+        let evidenceUnusable = null;
         if (!shrinkwrap) {
-          const result = packageLocks.materialize({
-            artifact, packageRoot, attrName: attrNameForId(row.id),
-            probe: (hash, lockFile) => probeLockMaterialization(row, artifact, hash, "package-lock", lockFile),
-            onFailure: (reason, error) => ({
-              skipped: skip(row, reason,
-                reason === "package-lock-evidence-incomplete" ? error.message : briefError(error)),
-            }),
-          });
+          let result;
+          try {
+            result = packageLocks.materialize({
+              artifact, packageRoot, attrName: attrNameForId(row.id),
+              probe: (hash, lockFile) => probeLockMaterialization(row, artifact, hash, "package-lock", lockFile),
+              onFailure: (reason, error) => ({
+                skipped: skip(row, reason,
+                  reason === "package-lock-evidence-incomplete" ? error.message : briefError(error)),
+              }),
+            });
+          } catch (error) {
+            evidenceUnusable = briefError(error);
+          }
           if (result) return result;
         }
         return {
           skipped: skip(
             row,
             "partial-bundled-runtime-dependencies",
-            `declared dependency roots missing from bundled node_modules: ${missingBundledRoots.join(", ")}`,
+            `declared dependency roots missing from bundled node_modules: ${missingBundledRoots.join(", ")}`
+              + (evidenceUnusable ? `; package-lock evidence unusable: ${evidenceUnusable}` : ""),
           ),
         };
       }
