@@ -140,8 +140,24 @@ function prepare() {
   }
 
   const lockChanged = normalizeLockedDependencySpecs(lock);
+  let packageJsonChanged = false;
   if (packageJson.devDependencies) {
     delete packageJson.devDependencies;
+    packageJsonChanged = true;
+  }
+  if (dependencyMode === "package-lock") {
+    // The evidence lock installs every declared dependency. A package that bundles some of
+    // them (bundleDependencies) installs those from the lock too, so the bundled copies and
+    // the bundle list go: the result is exactly the evidence's resolution.
+    for (const field of ["bundleDependencies", "bundledDependencies"]) {
+      if (field in packageJson) {
+        delete packageJson[field];
+        packageJsonChanged = true;
+      }
+    }
+    fs.rmSync(path.resolve("node_modules"), { recursive: true, force: true });
+  }
+  if (packageJsonChanged) {
     writeJson(packageJsonPath, packageJson);
   }
   if (lockChanged) {

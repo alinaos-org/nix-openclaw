@@ -90,3 +90,25 @@ for (const [label, mutate, pattern] of [
     assert.match(result.stderr, pattern);
   });
 }
+
+// 2026.11.10's @openclaw/codex bundles acorn alone; the evidence lock installs it with the rest.
+test("package-lock mode drops partial bundled copies and the bundle list", (t) => {
+  const { root, run } = fixture(t);
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json")));
+  writeJson(path.join(root, "package.json"), { ...packageJson, bundleDependencies: ["acpx"] });
+  fs.mkdirSync(path.join(root, "node_modules", "acpx"), { recursive: true });
+  writeJson(path.join(root, "node_modules", "acpx", "package.json"), { name: "acpx", version: "1.0.1" });
+  const result = run();
+  assert.equal(result.status, 0, result.stderr);
+  const prepared = JSON.parse(fs.readFileSync(path.join(root, "package.json")));
+  assert.equal(prepared.bundleDependencies, undefined);
+  assert.equal(fs.existsSync(path.join(root, "node_modules")), false);
+});
+
+test("shrinkwrap mode keeps bundled copies", (t) => {
+  const { root, run } = fixture(t, "shrinkwrap");
+  fs.mkdirSync(path.join(root, "node_modules", "acpx"), { recursive: true });
+  const result = run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(path.join(root, "node_modules", "acpx")), true);
+});

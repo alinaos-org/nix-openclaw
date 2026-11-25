@@ -48,6 +48,21 @@ export function createLockBuilder({
       const missingBundledRoots = declaredDependencyRoots(dependencies, optionalDependencies)
         .filter((dependencyRoot) => !bundledRootSet.has(dependencyRoot));
       if (missingBundledRoots.length > 0) {
+        // A package that bundles only some of its declared dependencies (2026.11.10's
+        // @openclaw/codex bundles acorn alone) installs from upstream's package-lock
+        // evidence when it covers the package: the build drops the bundled copies and the
+        // evidence lock installs every declared dependency, bundled ones included.
+        if (!shrinkwrap) {
+          const result = packageLocks.materialize({
+            artifact, packageRoot, attrName: attrNameForId(row.id),
+            probe: (hash, lockFile) => probeLockMaterialization(row, artifact, hash, "package-lock", lockFile),
+            onFailure: (reason, error) => ({
+              skipped: skip(row, reason,
+                reason === "package-lock-evidence-incomplete" ? error.message : briefError(error)),
+            }),
+          });
+          if (result) return result;
+        }
         return {
           skipped: skip(
             row,
@@ -231,7 +246,7 @@ export function createLockBuilder({
         dependencies,
         optionalDependencies,
         bundleDependencies: dependencyResult.dependencyMode === "bundled" ? artifact.bundleDependencies : [],
-        bundledPackageRoots,
+        bundledPackageRoots: dependencyResult.dependencyMode === "package-lock" ? [] : bundledPackageRoots,
         clawhubPackageName: artifact.clawhubPackageName,
         clawhubVersion: artifact.clawhubVersion,
         clawhubArtifactKind: artifact.clawhubArtifactKind,
